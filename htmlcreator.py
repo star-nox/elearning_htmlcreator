@@ -152,12 +152,12 @@ with open(args.originalfile, 'r') as f:
             string = i.get_text().strip().replace('\n', ' ')
             
             # Ignore tags without content
-            if not string and not 'id=\"Picture' in text:
+            if not string and not i.find('v:imagedata', src=True):
                 continue
 
             split = [(s).strip().replace('\n', ' ') for s in re.split(r'[<>]', text) if s]
         
-            if (split[0] != 'p class=\"MsoNormal\"'):
+            if split[0] != 'p class=\"MsoNormal\"' and split[0] != 'p class=\"MsoNoSpacing\"':
                 continue
             
             for i in range(1, len(split)):
@@ -187,3 +187,5 @@ if args.pretty:
     h = open(args.newfile, "w")
     h.write(pretty)
     h.close()
+
+print('Finished!')
