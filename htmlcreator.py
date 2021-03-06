@@ -79,7 +79,7 @@ def write_h3(name, url="INSERT"):
     global h3_counter, h3_sub_counter, is_first_paragraph
     if is_first_paragraph:
         write_transcript_empty()
-    h.write(f'<h3 id="h3_{h3_counter}">Lesson {module_level}-{h2_counter}.{h3_sub_counter} {name}</h3>\n<p><a href=\"{url}\" aria-label=\"Media Player for {name}\" alt=\"Opens in a new window\" target=\"_blank\">Media Player for Video</a></p>\n')
+    h.write(f'<h3 id="h3_{h3_counter}">Lesson {module_level}-{h2_counter - 1}.{h3_sub_counter} {name}</h3>\n<p><a href=\"{url}\" aria-label=\"Media Player for {name}\" alt=\"Opens in a new window\" target=\"_blank\">Media Player for Video</a></p>\n')
     h3_counter += 1
     h3_sub_counter += 1
 
