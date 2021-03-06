@@ -4,6 +4,7 @@ import argparse
 import re
 import os
 import sys
+import time
 
 # Arguments
 # -o Old file name
@@ -36,7 +37,7 @@ h2_counter = 1
 h3_counter = 1
 # This 'sub counter' counts the amount of h3's in a h2
 h3_sub_counter = 1
-is_transcript_open = False
+is_first_paragraph = False
 
 def write_basic_tags_begining(title):
     h.write(f'<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes\">\n<title>{title}</title>\n<script type=\"text/javascript\" async src=\"https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-MML-AM_CHTML\"></script><link rel=\"stylesheet\" type=\"text/css\" href=\"eLearningStyle.css\">\n</head>\n\n<body>\n<div role=\"main\">\n')
@@ -67,40 +68,44 @@ def write_h1(name):
     h.write(f'<h1>{name}</h1>\n')
 
 def write_h2(name):
-    global h2_counter, h3_sub_counter, is_transcript_open
-    if is_transcript_open:
-        write_transcript_end()
+    global h2_counter, h3_sub_counter
+    if is_first_paragraph:
+        write_transcript_empty()
     h.write(f'<h2 id="h2_{h2_counter}">{name}</h2>\n')
     h2_counter += 1
     h3_sub_counter = 1
 
 def write_h3(name, url="INSERT"):
-    global h3_counter, h3_sub_counter, is_transcript_open
-    if is_transcript_open:
-        write_transcript_end()
-    h.write(f'<h3 id="h3_{h3_counter}">{name}</h3>\n<p><a href=\"{url}\" aria-label=\"Media Player for {name}\" alt=\"Opens in a new window\" target=\"_blank\">Media Player for Video</a></p>\n')
+    global h3_counter, h3_sub_counter, is_first_paragraph
+    if is_first_paragraph:
+        write_transcript_empty()
+    h.write(f'<h3 id="h3_{h3_counter}">Lesson {module_level}-{h2_counter}.{h3_sub_counter} {name}</h3>\n<p><a href=\"{url}\" aria-label=\"Media Player for {name}\" alt=\"Opens in a new window\" target=\"_blank\">Media Player for Video</a></p>\n')
     h3_counter += 1
     h3_sub_counter += 1
 
 def write_slide():
-    global module_level, h2_counter, h3_sub_counter, slide_counter, is_transcript_open
-    if is_transcript_open:
-        write_transcript_end()
+    global module_level, h2_counter, h3_sub_counter, slide_counter, is_first_paragraph
+    if is_first_paragraph:
+        write_transcript_empty()
     h.write(f'<div class="avoidPageBreak">\n<h4>INSERT - Slide {slide_counter}</h4>\n<img src=\"Images/{module_level}-{h2_counter - 1}-{h3_sub_counter - 1}_Slide{slide_counter}.png\" width="450" height="250" alt="">\n</div>\n')
     slide_counter += 1
 
 def write_transcript_begin():
-    global is_transcript_open
+    global is_first_paragraph
     h.write('<div class="avoidPageBreak">\n<h5>Transcript</h5>\n')
-    is_transcript_open = True
+    is_first_paragraph = True
     
 def write_transcript(text):
-    h.write(f'<p>{text}</p>')
+    global is_first_paragraph
+    h.write(f'<p>{text}</p>\n')
+    if is_first_paragraph:
+        h.write('</div>\n')
+        is_first_paragraph = False
 
-def write_transcript_end():
-    global is_transcript_open
-    h.write('</div>\n')
-    is_transcript_open = False
+def write_transcript_empty():
+    global is_first_paragraph
+    if is_first_paragraph:
+        h.write('<p>No instruction provided</p></div>\n')
 
 # Renames the image and also converts to png is neccessary
 def image_rename(original_loc):
@@ -109,6 +114,9 @@ def image_rename(original_loc):
     image = Image.open(os.path.join(path, original_loc))
     image.save(os.path.join(path, new_name))
     return new_name
+
+# Program time
+begin_time = time.time()
 
 # For future use, consider implementing a tree structure if there's more than 1 sublevel
 with open(args.originalfile, 'r') as f:
@@ -137,8 +145,15 @@ with open(args.originalfile, 'r') as f:
 
     # Create rest of file
     for i in soup.find_all(['h2', 'h3', 'p']):
+        # Ignore TOC elements
+        try:
+            if i['class'][0].startswith('MsoToc'):
+                continue
+        except:
+            pass
+
         # Potentially use re later, this gets rid of grammar and spelling tags from Word
-        text = str(i).replace('<span class="SpellE">','').replace('<span class="GramE">','').replace('</span>', '')
+        text = str(i)
         if(text.startswith('<h2')):
             write_h2(i.get_text().strip())
         elif(text.startswith('<h3')):
@@ -149,32 +164,16 @@ with open(args.originalfile, 'r') as f:
             except:
                 write_h3(i.get_text().strip())
         elif(text.startswith('<p')):
-            string = i.get_text().strip().replace('\n', ' ')
-            
-            # Ignore tags without content
-            if not string and not i.find('v:imagedata', src=True):
-                continue
-
-            split = [(s).strip().replace('\n', ' ') for s in re.split(r'[<>]', text) if s]
-        
-            if split[0] != 'p class=\"MsoNormal\"' and split[0] != 'p class=\"MsoNoSpacing\"':
-                continue
-            
-            for i in range(1, len(split)):
-                if split[i] == '':
-                    continue
-                elif split[i].startswith(('/', 'br clear', 'span style', 'span class', 'v:f', 'v:p', 'v:s', 'o:')):
-                    continue
-                elif split[i].startswith('v:imagedata '):
-                    image_name = re.search('src=\"(.*)\"', split[i])
-                    new_name = image_rename(image_name.group(1).replace('%20', ' '))
-                    write_slide()
-                    write_transcript_begin()
-                else:
-                    write_transcript(split[i])
-
-if is_transcript_open:
-    write_transcript_end()
+            image = i.find('v:imagedata', src=True)
+            if (image is not None):
+                image_rename(image['src'])
+                write_slide()
+                write_transcript_begin()
+            else:
+                write_transcript(i.text.strip().replace('\n', ' '))
+                    
+if is_first_paragraph:
+    write_transcript_empty()
     
 write_basic_tags_ending()
 h.close()
@@ -189,3 +188,4 @@ if args.pretty:
     h.close()
 
 print('Finished!')
+print(time.time() - begin_time)
