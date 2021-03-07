@@ -48,6 +48,7 @@ def write_basic_tags_ending():
 def write_toc(h2_list, h3_list, order):
     toc_h2_counter = 0
     toc_h3_counter = 0
+    toc_h3_sub_counter = 1
     h.write(f'<a href=\"#h2_1\">Skip the Table of Contents</a>\n<div id=\"toc_container\">\n<h2 class=\"toc_title\">Contents</h2>\n<div class=\"toc_list\">')
     for i in order:
         if i == 2:
@@ -55,9 +56,11 @@ def write_toc(h2_list, h3_list, order):
                 h.write('</ol>\n')
             h.write(f'<h3><a href=\"#h2_{toc_h2_counter + 1}\">{h2_list[toc_h2_counter]}</a></h3>\n<ol>\n')
             toc_h2_counter += 1
+            toc_h3_sub_counter = 1
         if i == 3:
-            h.write(f'<li><a href=\"#h3_{toc_h3_counter + 1}\">{h3_list[toc_h3_counter]}</a></li>\n')
+            h.write(f'<li><a href=\"#h3_{toc_h3_counter + 1}\">Lesson {module_level}-{toc_h2_counter}.{toc_h3_sub_counter} {h3_list[toc_h3_counter]}</a></li>\n')
             toc_h3_counter += 1
+            toc_h3_sub_counter += 1
 
     if toc_h2_counter > 0:
         h.write('</ol>\n')
@@ -106,6 +109,7 @@ def write_transcript_empty():
     global is_first_paragraph
     if is_first_paragraph:
         h.write('<p>No instruction provided</p></div>\n')
+        is_first_paragraph = False
 
 # Renames the image and also converts to png is neccessary
 def image_rename(original_loc):
@@ -165,12 +169,16 @@ with open(args.originalfile, 'r') as f:
                 write_h3(i.get_text().strip())
         elif(text.startswith('<p')):
             image = i.find('v:imagedata', src=True)
+            text = i.text.strip().replace('\n', ' ')
             if (image is not None):
                 image_rename(image['src'])
                 write_slide()
                 write_transcript_begin()
+                if text != '':
+                    write_transcript(text)
             else:
-                write_transcript(i.text.strip().replace('\n', ' '))
+                if text != '':
+                    write_transcript(text)
                     
 if is_first_paragraph:
     write_transcript_empty()
