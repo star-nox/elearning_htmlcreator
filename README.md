@@ -26,6 +26,9 @@ As of now, some exceptions aren't handled, so having the correct format for a Wo
 ```htmlcreator.py -o "MBA 548 MOOC 1 Module 1.htm" -n "MBA 548 MOOC 1 Module 1.html" -m 1 -p```
 This would take the transcript named "MBA 548 MOOC 1 Module 1.htm" and create a new "MBA 548 MOOC 1 Module 1.html" with an Images folder. -m signifies that this is module 1 and the -p will make the resulting HTML file formatted (somewhat). Remember to include the .htm and .html extensions.
 
+Video Tutorial:
+[![Video Tutorial](https://img.youtube.com/vi/uOSD2idum08/0.jpg)](https://www.youtube.com/watch?v=uOSD2idum08)
+
 ## Notes
 If there is already an "Images" folder in the same folder as the program, the program will fail to run. You will need to remove the "Images" folder or move it elsewhere.
 This program may take a while to run and will crash if there are issues with the transcript files. Hopefully, I can resolve those but in the meantime, I think this will work.
