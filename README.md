@@ -22,8 +22,8 @@ As of now, some exceptions aren't handled, so having the correct format for a Wo
     - -n Name of new .html file (the one you want to be creating)
     - -m Module level (optional, default is 1)
 
-```htmlcreator.py -o "MBA 548 MOOC 1 Module 1.htm" -n "MBA 548 MOOC 1 Module 1.html" -m 1 -p```
-This would take the transcript named "MBA 548 MOOC 1 Module 1.htm" and create a new "MBA 548 MOOC 1 Module 1.html" with an Images folder. -m signifies that this is module 1 and the -p will make the resulting HTML file formatted (somewhat). Remember to include the .htm and .html extensions.
+```htmlcreator.py -o "MBA 548 MOOC 1 Module 1.htm" -n "MBA 548 MOOC 1 Module 1.html" -m 1```
+This would take the transcript named "MBA 548 MOOC 1 Module 1.htm" and create a new "MBA 548 MOOC 1 Module 1.html" with an Images folder. -m signifies that this is module 1. Remember to include the .htm and .html extensions.
 
 Video Tutorial:
 
