@@ -1,16 +1,178 @@
 from bs4 import BeautifulSoup
 from PIL import Image
-import argparse
 import shutil
 import os
 import sys
 import time
+import re
+import unicodedata
+
+def slugify(value, allow_unicode=False):
+    """
+    Taken from https://github.com/django/django/blob/master/django/utils/text.py
+    Convert to ASCII if 'allow_unicode' is False. Convert spaces or repeated
+    dashes to single dashes. Remove characters that aren't alphanumerics,
+    underscores, or hyphens. Convert to lowercase. Also strip leading and
+    trailing whitespace, dashes, and underscores.
+    """
+    value = str(value)
+    if allow_unicode:
+        value = unicodedata.normalize('NFKC', value)
+    else:
+        value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
+    value = re.sub(r'[^\w\s-]', '', value.lower())
+    return re.sub(r'[-\s]+', '-', value).strip('-_')
+
+def get_htm_files():
+    dir_files = os.listdir()
+    valid_files = []
+    for file in dir_files:
+        filename, file_extension = os.path.splitext(file)
+        if (file_extension == '.htm' and os.path.isdir(filename + '_files')) or (file_extension == '.html' and os.path.isdir(filename +'.fld')):
+            valid_files.append(file)
+
+    return valid_files
+
+def create_folder(title):
+    folder_name = slugify(title)
+    if os.path.isdir(folder_name):
+        return False
+    
+    os.makedirs(os.path.join(folder_name, 'Images'))
+
+    if os.path.isfile('eLearningStyle.css'):
+        shutil.copy('eLearningStyle.css', folder_name)
+
+    if os.path.isfile('giesorange.png'):
+        shutil.copy('giesorange.png', os.path.join(folder_name, 'Images'))
+
+    return folder_name
+
+def write_tags_begining(html, title):
+    html.write(
+        '<!doctype html>\n'
+        '<html lang=\"en\">\n'
+        '<head>\n'
+        '<meta charset=\"UTF-8\">\n'
+        '<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes\">\n'
+        f'<title>{title}</title>\n'
+        '<script type=\"text/javascript\" async src=\"https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-MML-AM_CHTML\"></script><link rel=\"stylesheet\" type=\"text/css\" href=\"eLearningStyle.css\">\n'
+        '</head>\n'
+        '<body>\n'
+        '<div role=\"main\">\n'
+        f'<h1>{title}</h1>\n')
+
+def write_tags_ending(html):
+    html.write(
+        '</div>\n'
+        '<script>\n'
+        'var queried=[];\n'
+        'document.body.innerText.match(/[A-Z]{2,}/g).forEach(function(a){if(!queried.includes(a))queried.push(a)});\n'
+        'console.log(queried);\n'
+        '</script>\n'
+        '</body>\n'
+        '</html>\n')
+
+def write_toc(html, title, h2_and_h3):
+    html.write(
+        '<a href=\"#h2_1\">Skip the Table of Contents</a>\n'
+        '<div id=\"toc_container\">\n'
+        '<h2 class=\"toc_title\">Contents</h2>\n'
+        '<div class=\"toc_list\">\n')
+
+    formatted_headings = []
+    module = 0
+    title_split = unicodedata.normalize('NFC', title.replace(':', '')).split()
+    if title_split[0].lower() == 'module' and title_split[1].isdigit():
+        module = int(title_split[1])
+    
+    h2_href_level = 1
+    h3_href_level = 1
+    h2_level = 0
+    h3_level = 0
+    for level, heading in h2_and_h3:
+        heading_split = unicodedata.normalize('NFC', heading).split()
+        heading = ' '.join(heading_split)
+        if level == 'h2':
+            h2_level += 1
+            h3_level = 0
+            if h2_href_level >= 2:
+                html.write('</ol>\n')
+
+            if heading_split[0].lower() == 'lesson':
+                lesson_num = heading_split[1].replace(':', '').split('-')
+                if lesson_num[0].isdigit():
+                    module = lesson_num[0]
+                
+                if lesson_num[1].replace(':', '').isdigit():
+                    h2_level = int(lesson_num[1])
+                
+                heading = ' '.join(heading_split[2:])
+            
+            html.write(f'<h3><a href=\"#h2_{h2_href_level}\">Lesson {module}-{h2_level} {heading}</a></h3>\n<ol>\n')
+            
+            formatted_headings.append((h2_href_level, level, module, h2_level, h3_level, heading))
+            h2_href_level += 1
+
+        elif level == 'h3':
+            h3_level += 1
+            if heading_split[0].lower() == 'lesson':
+                lesson_num = heading_split[1].replace(':', '').split('.')
+                if lesson_num[1].isdigit():
+                    h3_level = int(lesson_num[1])
+
+                heading = ' '.join(heading_split[2:])
+
+            html.write(f'<li><a href=\"#h3_{h3_href_level}\">Lesson {module}-{h2_level}.{h3_level} {heading}</a></li>\n')
+            
+            formatted_headings.append((h3_href_level, level, module, h2_level, h3_level, heading))
+            h3_href_level += 1
+
+    html.write('</ol>\n</div>\n</div>\n')
+
+    return formatted_headings
+
+def write_header(html, href_level, level, module, h2_level, h3_level, heading, url="INSERT"):
+    if level == 'h2':
+        html.write(f'<{level} id="{level}_{href_level}">Lesson {module}-{h2_level} {heading}</{level}>\n')
+    elif level == 'h3':
+        html.write(f'<{level} id="{level}_{href_level}">Lesson {module}-{h2_level}.{h3_level} {heading}</{level}>\n')
+        html.write(f'<p><a href=\"{url}\" aria-label=\"Media Player for {heading}\" alt=\"Opens in a new window\" target=\"_blank\">Media Player for Video</a></p>\n')
+
+def write_slide(html, slide_num, module, h2_level, h3_level):
+    html.write(
+        f'<div class="avoidPageBreak">\n'
+        f'<h4>INSERT - Slide {slide_num}</h4>\n'
+        f'<img src=\"Images/{module}-{h2_level}-{h3_level}_Slide{slide_num}.png\" width="450" height="250" alt="">\n'
+        '</div>\n'
+        '<div class="avoidPageBreak">\n'
+        '<h5>Transcript</h5>\n')
+
+def write_transcript(html, text, is_first_transcript):
+    html.write(f'<p>{text}</p>\n')
+    if is_first_transcript:
+        html.write('</div>\n')
+
+def write_transcript_empty(html):
+    html.write('<p>No instruction provided</p></div>\n')
+
+def image_converter(folder_name, img_path, module, h2_level, h3_level, slide_num):
+    img_folder, img_file = img_path.replace('%20', ' ').split('/')
+    img_extension = os.path.splitext(img_file)[1]
+    new_image_folder = os.path.join(folder_name, "Images")
+    new_image_name = f'{module}-{h2_level}-{h3_level}_Slide{slide_num}.png'
+    if img_extension == '.png':
+        shutil.copy(os.path.join(img_folder, img_file), new_image_folder)
+        os.rename(os.path.join(new_image_folder, img_file), os.path.join(new_image_folder, new_image_name))
+    else:
+        image = Image.open(os.path.join(img_folder, img_file))
+        image.save(os.path.join(new_image_folder, new_image_name))
 
 # From https://gist.github.com/dmattera/ef11cb37c31d732f9e5d2347eea876c2
 def soup_prettify2(soup, desired_indent): #where desired_indent is number of spaces as an int() 
 	pretty_soup = str()
 	previous_indent = 0
-	for line in soup.prettify().split("\n"): # iterate over each line of a prettified soup
+	for line in soup.prettify(formatter="html").split("\n"): # iterate over each line of a prettified soup
 		current_indent = str(line).find("<") # returns the index for the opening html tag '<' 
 		# which is also represents the number of spaces in the lines indentation
 		if current_indent == -1 or current_indent > previous_indent + 2:
@@ -31,197 +193,105 @@ def write_new_line(line, current_indent, desired_indent):
 	new_line += str(line) + "\n"
 	return new_line
 
-def htmlcreator(path, old_file, new_file, module_level):
-    # Starting
-    slide_counter = 1
-    h2_counter = 1
-    h3_counter = 1
-    h3_sub_counter = 1
-    is_first_paragraph = False
+def pretty(file):
+    data = open(file).read()
+    soup = BeautifulSoup(data, 'lxml')
+    pretty = soup_prettify2(soup, desired_indent=4)
+    h = open(file, "w")
+    h.write(pretty)
+    h.close()
 
-    def write_basic_tags_begining(title):
-        h.write(f"""<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes\">\n<title>{title}</title>\n<script type=\"text/javascript\" async src=\"https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-MML-AM_CHTML\"></script><link rel=\"stylesheet\" type=\"text/css\" href=\"eLearningStyle.css\">\n</head>\n\n<body>\n<div role=\"main\">\n""")
-
-    def write_basic_tags_ending():
-        h.write('</div>\n<script>\nvar queried=[];\ndocument.body.innerText.match(/[A-Z]{2,}/g).forEach(function(a){if(!queried.includes(a))queried.push(a)});\nconsole.log(queried);\n</script>\n</body>\n</html>')
-
-    def write_toc(h2_list, h3_list, order):
-        toc_h2_counter = 0
-        toc_h3_counter = 0
-        toc_h3_sub_counter = 1
-        h.write(f'<a href=\"#h2_1\">Skip the Table of Contents</a>\n<div id=\"toc_container\">\n<h2 class=\"toc_title\">Contents</h2>\n<div class=\"toc_list\">')
-        for i in order:
-            if i == 2:
-                if toc_h2_counter > 0:
-                    h.write('</ol>\n')
-                h.write(f'<h3><a href=\"#h2_{toc_h2_counter + 1}\">{h2_list[toc_h2_counter]}</a></h3>\n<ol>\n')
-                toc_h2_counter += 1
-                toc_h3_sub_counter = 1
-            if i == 3:
-                h.write(f'<li><a href=\"#h3_{toc_h3_counter + 1}\">Lesson {module_level}-{toc_h2_counter}.{toc_h3_sub_counter} {h3_list[toc_h3_counter]}</a></li>\n')
-                toc_h3_counter += 1
-                toc_h3_sub_counter += 1
-
-        if toc_h2_counter > 0:
-            h.write('</ol>\n')
-
-        h.write('</div>\n</div>\n\n')
-        
-    def write_h1(name):
-        h.write(f'<h1>{name}</h1>\n')
-
-    def write_h2(name):
-        nonlocal h2_counter, h3_sub_counter
-        if is_first_paragraph:
-            write_transcript_empty()
-        h.write(f'<h2 id="h2_{h2_counter}">{name}</h2>\n')
-        h2_counter += 1
-        h3_sub_counter = 1
-
-    def write_h3(name, url="INSERT"):
-        nonlocal h3_counter, h3_sub_counter, is_first_paragraph
-        if is_first_paragraph:
-            write_transcript_empty()
-        h.write(f'<h3 id="h3_{h3_counter}">Lesson {module_level}-{h2_counter - 1}.{h3_sub_counter} {name}</h3>\n<p><a href=\"{url}\" aria-label=\"Media Player for {name}\" alt=\"Opens in a new window\" target=\"_blank\">Media Player for Video</a></p>\n')
-        h3_counter += 1
-        h3_sub_counter += 1
-
-    def write_slide():
-        nonlocal module_level, h2_counter, h3_sub_counter, slide_counter, is_first_paragraph
-        if is_first_paragraph:
-            write_transcript_empty()
-        h.write(f'<div class="avoidPageBreak">\n<h4>INSERT - Slide {slide_counter}</h4>\n<img src=\"Images/{module_level}-{h2_counter - 1}-{h3_sub_counter - 1}_Slide{slide_counter}.png\" width="450" height="250" alt="">\n</div>\n')
-        slide_counter += 1
-
-    def write_transcript_begin():
-        nonlocal is_first_paragraph
-        h.write('<div class="avoidPageBreak">\n<h5>Transcript</h5>\n')
-        is_first_paragraph = True
-        
-    def write_transcript(text):
-        nonlocal is_first_paragraph
-        h.write(f'<p>{text}</p>\n')
-        if is_first_paragraph:
-            h.write('</div>\n')
-            is_first_paragraph = False
-
-    def write_transcript_empty():
-        nonlocal is_first_paragraph
-        if is_first_paragraph:
-            h.write('<p>No instruction provided</p></div>\n')
-            is_first_paragraph = False
-
-    # Renames the image and also converts to png is neccessary
-    def image_rename(original_loc):
-        nonlocal h2_counter, h3_sub_counter, slide_counter
-        new_name = 'Images\\' + str(module_level) + '-' + str(h2_counter - 1) + '-' + str(h3_sub_counter - 1) + '_Slide' + str(slide_counter) + '.png'
-        image = Image.open(os.path.join(path, original_loc.replace('%20', ' ')))
-        image.save(os.path.join(path, new_name))
-        return new_name
-
-    def pretty(file):
-        data = open(file).read()
-        soup = BeautifulSoup(data, 'lxml')
-        pretty = soup_prettify2(soup, desired_indent=4)
-        h = open(file, "w")
-        h.write(pretty)
-        h.close()
-
-    # Delete/create Image folder
-    try:
-        if os.path.isdir(f'{path}/Images'):
-            shutil.rmtree(f'{path}/Images')
-        os.mkdir(f'{path}/Images')
-    except:
-        print("Error in Image folder creation")
-        sys.exit(1)
-
-    # h for html :)
-    h = open(new_file, "w")
-
-    # For future use, consider implementing a tree structure if there's more than 1 sublevel
-    with open(old_file, 'r') as f:
+def html_creator(file):
+    with open(file, 'r') as f:
         contents = f.read()
         soup = BeautifulSoup(contents, 'lxml')
 
-        # Create h1
-        h1 = soup.h1.get_text().replace('\n',' ')
-        write_basic_tags_begining(h1)
-        write_h1(h1)
+        title = soup.find('h1').text.strip()
+        folder_name = create_folder(title)
+        if folder_name == False:
+            return False
+        
+        html = open(os.path.join(folder_name, f'{folder_name}.html'), "w")
+        write_tags_begining(html, title)
+        h2_and_h3 = [(i.name, i.text) for i in soup.find_all(['h2', 'h3'])]
+        headings = write_toc(html, title, h2_and_h3)
+        slide_num = 1
+        is_first_transcript = False
+        for element in soup.find_all(['h2', 'h3', 'p']):
+            if element.has_attr('class') and element['class'][0].startswith('MsoToc'):
+                continue
 
-        h2 = []
-        h3 = []
-        heading_order = []
-
-        # Create TOC
-        for i in soup.find_all(['h2', 'h3']):
-            if(str(i).startswith('<h2')):
-                h2.append(i.get_text().strip().replace('\n',' '))
-                heading_order.append(2)
-            elif(str(i).startswith('<h3')):
-                h3.append(i.get_text().strip().replace('\n',' '))
-                heading_order.append(3)
-
-        write_toc(h2, h3, heading_order)
-
-        # Create rest of file
-        for i in soup.find_all(['h2', 'h3', 'p']):
-            # Ignore TOC elements
-            try:
-                if i['class'][0].startswith('MsoToc'):
+            if element.name == 'h2':
+                href_level, level, module, h2_level, h3_level, heading = headings.pop(0)
+                if level != element.name:
                     continue
-            except:
-                pass
+                
+                if is_first_transcript:
+                    write_transcript_empty(html)
+                    is_first_transcript = False
 
-            # Potentially use re later, this gets rid of grammar and spelling tags from Word
-            text = str(i)
-            if(text.startswith('<h2')):
-                write_h2(i.get_text().strip())
-            elif(text.startswith('<h3')):
-                href = i.find('a', href=True)
+                write_header(html, href_level, level, module, h2_level, h3_level, heading)
+            elif element.name == 'h3':
+                href_level, level, module, h2_level, h3_level, heading = headings.pop(0)
+                if level != element.name:
+                    continue
+                
+                if is_first_transcript:
+                    write_transcript_empty(html)
+                    is_first_transcript = False
+
+                href = element.find('a', href=True)
                 # If hyperlinked video exists, add the url
                 try:
-                    write_h3(i.get_text().strip(), href['href'])
+                    write_header(html, href_level, level, module, h2_level, h3_level, heading, href['href'])
                 except:
-                    write_h3(i.get_text().strip())
-            elif(text.startswith('<p')):
-                image = i.find('v:imagedata', src=True)
-                text = i.text.strip().replace('\n', ' ')
-                if (image is not None):
-                    image_rename(image['src'])
-                    write_slide()
-                    write_transcript_begin()
-                    if text != '':
-                        write_transcript(text)
-                else:
-                    if text != '':
-                        write_transcript(text)
-                        
-    if is_first_paragraph:
-        write_transcript_empty()
-        
-    write_basic_tags_ending()
-    h.close()
+                    write_header(html, href_level, level, module, h2_level, h3_level, heading)
 
-    # Make pretty for humans :)
-    pretty(new_file)
+            elif element.name == 'p':
+                image = element.find('v:imagedata', src=True)
+                text = ' '.join(unicodedata.normalize('NFC', element.text).strip().split())
+                if image:
+                    image_converter(folder_name, image['src'], module, h2_level, h3_level, slide_num)
+                    if is_first_transcript:
+                        write_transcript_empty(html)
+
+                    is_first_transcript = True
+                    write_slide(html, slide_num, module, h2_level, h3_level)
+                    slide_num += 1
+
+                if text != '':
+                    write_transcript(html, text, is_first_transcript)
+                    is_first_transcript = False
+                
+        if is_first_transcript:
+            write_transcript_empty(html)
+        
+        write_tags_ending(html)
+
+    html.close()
+    pretty(os.path.join(folder_name, f'{folder_name}.html'))
+
+    return True
+
+def main():
+    print('Conversion in progress...')
+    application_path = ''
+    if getattr(sys, 'frozen', False):
+        application_path = os.path.dirname(sys.executable)
+    else:
+        application_path = os.path.dirname(os.path.abspath(__file__))
+
+    os.chdir(application_path)
+    htm_files = get_htm_files()
+    for file in htm_files:
+        begin_time = time.time()
+        finished = html_creator(file)
+        if not finished:
+            print(f'{file} was not converted since folder already exists!')
+        else:
+            print(f'Finished {file} in {time.time() - begin_time} seconds!')
+
+    input("Press enter to exit")
 
 if __name__ == "__main__":
-    # Arguments
-    # -o Old file name
-    # -n New file name
-    # -m Module level (optional, default 1)
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-o", "--oldfile", help="Original HTML file")
-    parser.add_argument("-n", "--newfile", help="New HTML file", required=False, default='text.html')
-    parser.add_argument("-m", "--modulelevel", help="Module level", type=int, required=False, default='0')
-
-    args = parser.parse_args()
-
-    path = os.path.dirname(os.path.abspath(__file__))
-
-    # Program time
-    begin_time = time.time()
-    htmlcreator(path, args.oldfile, args.newfile, args.modulelevel)
-    print('Finished!')
-    print(time.time() - begin_time)
+    main()
