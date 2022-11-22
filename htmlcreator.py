@@ -260,10 +260,12 @@ def html_creator(file):
                     write_header(html, href_level, level, module, h2_level, h3_level, heading)
 
             elif element.name == 'p':
+                # split image to fetch from either of the tags
                 image = element.find('v:imagedata', src=True)
                 if not image:
                     image = element.find('img', src=True)
 
+                # was getting some extra tags in the transcript and headers
                 text_elements = unicodedata.normalize('NFC', element.text).strip().split()
                 text_elements = [x for x in text_elements if '<' not in x and '>' not in x]
                 text = ' '.join(text_elements)
