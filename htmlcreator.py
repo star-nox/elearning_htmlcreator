@@ -92,6 +92,7 @@ def write_toc(html, title, h2_and_h3):
     h3_level = 0
     for level, heading in h2_and_h3:
         heading_split = unicodedata.normalize('NFC', heading).split()
+
         heading = ' '.join(heading_split)
         if level == 'h2':
             h2_level += 1
@@ -108,7 +109,8 @@ def write_toc(html, title, h2_and_h3):
                     h2_level = int(lesson_num[1])
                 
                 heading = ' '.join(heading_split[2:])
-            
+
+
             html.write(f'<h3><a href=\"#h2_{h2_href_level}\">Lesson {module}-{h2_level} {heading}</a></h3>\n<ol>\n')
             
             formatted_headings.append((h2_href_level, level, module, h2_level, h3_level, heading))
@@ -168,6 +170,7 @@ def image_converter(folder_name, img_path, module, h2_level, h3_level, slide_num
         image = Image.open(os.path.join(img_folder, img_file))
         image.save(os.path.join(new_image_folder, new_image_name))
 
+
 # From https://gist.github.com/dmattera/ef11cb37c31d732f9e5d2347eea876c2
 def soup_prettify2(soup, desired_indent): #where desired_indent is number of spaces as an int() 
 	pretty_soup = str()
@@ -184,6 +187,7 @@ def soup_prettify2(soup, desired_indent): #where desired_indent is number of spa
 		pretty_soup += write_new_line(line, current_indent, desired_indent)
 	return pretty_soup
 
+
 def write_new_line(line, current_indent, desired_indent):
 	new_line = ""
 	spaces_to_add = (current_indent * desired_indent) - current_indent
@@ -193,6 +197,7 @@ def write_new_line(line, current_indent, desired_indent):
 	new_line += str(line) + "\n"
 	return new_line
 
+
 def pretty(file):
     data = open(file).read()
     soup = BeautifulSoup(data, 'lxml')
@@ -200,6 +205,7 @@ def pretty(file):
     h = open(file, "w")
     h.write(pretty)
     h.close()
+
 
 def html_creator(file):
     with open(file, 'r') as f:
@@ -213,7 +219,13 @@ def html_creator(file):
         
         html = open(os.path.join(folder_name, f'{folder_name}.html'), "w")
         write_tags_begining(html, title)
-        h2_and_h3 = [(i.name, i.text) for i in soup.find_all(['h2', 'h3'])]
+        h2_and_h3 = []
+        for j in soup.find_all(['h2', 'h3']):
+            if j.name == 'h2':
+                h2_and_h3.append((j.name, j.text))
+            elif j.name == 'h3':
+                span = j.find('span')
+                h2_and_h3.append((j.name, span.text))
         headings = write_toc(html, title, h2_and_h3)
         slide_num = 1
         is_first_transcript = False
@@ -249,7 +261,13 @@ def html_creator(file):
 
             elif element.name == 'p':
                 image = element.find('v:imagedata', src=True)
-                text = ' '.join(unicodedata.normalize('NFC', element.text).strip().split())
+                if not image:
+                    image = element.find('img', src=True)
+
+                text_elements = unicodedata.normalize('NFC', element.text).strip().split()
+                text_elements = [x for x in text_elements if '<' not in x and '>' not in x]
+                text = ' '.join(text_elements)
+
                 if image:
                     image_converter(folder_name, image['src'], module, h2_level, h3_level, slide_num)
                     if is_first_transcript:
