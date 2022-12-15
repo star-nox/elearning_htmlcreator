@@ -5,7 +5,12 @@ Turns Word files into skeleton HTML files with the correct formatting.
 The main purpose of this project is so people not familiar with HTML can turn Word video transcript files into HTML files with relative ease. The script creates skeleton code that can be utilized by the user to add more detailed information afterward.
 
 ## Download
+** Note that the Python version is the *UPDATED VERSION* which handles all the transcript issues (missing images, file not generated, etc.) ** 
+
 If using the Python version, you can download the files from above as a zip file.
+
+** Executable version is the *OLDER VERSION* **
+
 Executable versions of the script can be downloaded below. These executable versions have larger file sizes, however they can be run without downloading any prerequisites.
 - Windows (15.2 MB): [htmlcreator_WIN.zip](https://uofi.box.com/shared/static/uhyobtu6ty9d63jauyqh8y4dssnpgi4m.zip)
 - Mac (14.5 MB): [htmlcreator_MAC.zip](https://uofi.box.com/shared/static/ii826fh1fyk4dzu19swvf2jk9nxyxg6b.zip)
