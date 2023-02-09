@@ -1,0 +1,373 @@
+@charset "UTF-8";
+/* eLearning Video Lecture CSS*/
+
+/*text alignment: left*/
+p {text-align: left;}
+
+/*Heading Size*/
+h1 {
+  font-size: 2em;
+}
+h2 {
+  font-size: 1.7em;
+}
+h3 {
+  font-size: 1.6em;
+}
+h4 {
+  font-size: 1.5em;
+}
+h5 {
+  font-size: 1.4em;
+}
+h6 {
+  font-size: 1.3em;
+}
+
+
+/*image border*/
+img  {
+border: 1px solid #000000;
+}
+
+/*underline any links*/
+a { text-decoration: underline;}
+
+/*table border*/
+table, td, th { padding: 5px; border: 1px solid black;} 
+table {
+    border-collapse: collapse;
+    border-spacing: 0px;
+}
+td {
+  padding: 15px 5px;
+}
+
+/*Table Formatting for extra padding*/
+/**For this you have to use the code below in HTML **/
+/** <table class="extra-padding"> **/
+
+table.extra-padding td {
+  padding: 15px 5px;
+}
+
+
+/*put page break before table*/
+table { page-break-before:always; }
+table { page-break-after:always; }
+
+/*Put page break after H2 always*/
+/*put a gies I logo next to H2*/
+h2 { 
+	page-break-before: always;
+	background: url(Images/giesorange.png) no-repeat;
+	background-position: center left;
+	padding: 15px 15px 15px 50px;
+}
+
+
+/*Avoiding pagebreak after H4 and H5*/
+.avoidPageBreak { page-break-inside:avoid; }
+
+/*Reading capital letters*/
+.uc {text-transform:uppercase;}
+
+/*Reading acronyms*/
+.sr-text{
+	position: absolute;
+	overflow:hidden;
+	clip: rect(1px, 1px, 1px, 1px);
+	width: 1px;
+	height: 1px;
+	}
+
+/*del*/
+del::before,
+del::after {
+  clip-path: inset(100%);
+  clip: rect(1px, 1px, 1px, 1px);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+del::before {
+  content: " [deletion start] ";
+}
+del::after {
+  content: " [deletion end] ";
+}
+
+/*TOC creation*/
+#toc_container {
+    background: #f9f9f9 none repeat scroll 0 0;
+    border: 1px solid #aaa;
+    display: table;
+    font-size: 95%;
+    margin-bottom: 1em;
+    padding: 20px;
+    width: auto;}
+
+.toc_title {
+    font-weight: 700;
+    text-align: center;}
+
+#toc_container li, #toc_container ul, #toc_container ul li{
+    list-style: outside none none !important;}
+	
+#skip a {
+    background: transparent none repeat scroll 0 0;
+    border-bottom: 1px solid white;
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
+    border-right: 1px solid white;
+    color: white;
+    font-size: 0.9rem;
+    left: 40%;
+    padding: 6px;
+    position: absolute;
+    top: -48px;
+    transition: top 1s ease-out 0s, background 1s linear 0s;
+    z-index: 100;}
+	
+#skip a:focus {
+    background: #fff none repeat scroll 0 0;
+    color: black;
+    left: 40%;
+    outline: 0 none;
+    position: absolute;
+    top: 0;
+    transition: top 0.1s ease-in 0s, background 0.5s linear 0s;}
+
+/*Reference creation*/
+footer ol {
+  padding-left: 20px;
+}
+counter {
+  vertical-align: super;
+  font-size: 0.5em;
+  margin-left: 2px;
+  color: blue;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+[aria-describedby="Ref-label"] {
+  text-decoration: none; 
+  color: inherit; 
+  cursor: default; 
+  outline: none; 
+}
+
+[aria-describedby="Ref-label"]::after {
+  vertical-align: super; 
+  font-size: 0.5em; 
+  margin-left: 2px; 
+  color: blue; 
+  text-decoration: underline; 
+  cursor: pointer; 
+}
+
+[aria-describedby="Ref-label"]:focus::after {
+  outline: thin dotted;
+  outline-offset: 2px;
+}
+
+[aria-label="Back to content"] {
+  font-size: 0.8em;
+}
+
+footer :target {
+  background: yellow;
+}
+
+.visually-hidden {
+  position: absolute;
+  clip: rect(0 0 0 0);
+  visibility: hidden;
+  opacity: 0;
+}
+
+/*Images hiding from screen readers, but showing only to the sighted users*/
+.x-screen-reader {
+ 
+    position: absolute !important;
+    overflow: hidden !important;
+    clip: rect(1px,1px,1px,1px) !important;
+    width: 1px !important;
+    height: 1px !important;
+    border: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+ 
+}
+
+/***Screen reader only text**/
+.sr-only {
+  border: 0 none;
+  clip: rect(0px, 0px, 0px, 0px);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  width: 1px;
+}
+
+/*No Bullet List Style*/
+ul.no-bullets {
+  list-style-type: none; }/* Remove bullets */
+
+
+/*Styles for Accounting 506 Curly Bracket & Typography: Single and Double Underline*/
+/***Typography***/
+
+b {
+  font-weight: normal;
+}
+
+b.subtotal, b.grandtotal {
+  font-weight: normal;
+}
+
+.subtotal {
+  border-bottom: 2px solid #000;
+}
+
+.grand-total {
+  border-bottom: 7px double #000;
+}
+
+
+b.single-underline {
+  border-bottom: 2px solid #000;
+  font-weight: normal;
+}
+
+b.double-underline {
+  border-bottom: 7px double #000;
+  font-weight: normal;
+}
+
+b.bold {
+  font-weight: bold;
+}
+
+/***Entire slide content***/
+
+.slide {
+  box-sizing: border-box;
+  padding: 0.625em;
+  min-width: 40em; /*This specifies the minimum width of the slide; it won't size down lower than this value*/
+  width: 100%; /*This width is 100% of the available viewport*/
+}
+
+.slide-name {
+  font-size: 2em;
+  margin-bottom: 1.25em;
+}
+
+/***This controls the "blue box"***/
+.slide-group {
+  position: relative;
+  background-color: #bde0fc;
+  width: 33%; /*Represents a third of the width of the parent .slide container*/
+}
+
+.slide-group-head {
+  font-size: 1.5em;
+  padding: 1.25em 0;
+  line-height: 0;
+  text-align: center;
+}
+
+/*Lists within "blue box"*/
+.slide-group-detail {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+.slide-group-detail li {
+  margin-bottom: 0.625em;
+  border-bottom: 1px solid #fff;
+  padding: 0 0 0.625em 0.313em;
+}
+
+.slide-group-detail li:first-of-type {
+  margin-top: 0;
+  padding-top: 0.625em;
+  border-top: 1px solid #fff;
+}
+
+.slide-group-detail li:last-child {
+  margin-bottom: 0;
+  border: 0;
+}
+
+.slide-group-detail li.indent {
+  padding-left: 1.25em;
+}
+
+/***The following controls the bracket and text, in relation to the slide-group***/
+.slide-group-pull {
+  position: absolute;
+  display: flex;
+  align-items: center;
+}
+
+/*Pull with slide group with 4 items*/
+.slide-group-4-items .slide-group-pull {
+  left: 100%; /*Changing the bracket height may require changes to this value*/
+  top: 20%; /*Changing the bracket height may require changes to this value*/
+}
+
+/*Pull with slide group with 6 items*/
+.slide-group-6-items .slide-group-pull {
+  left: 100%; /*Changing the bracket height may require changes to this value*/
+  top: 12%; /*Changing the bracket height may require changes to this value*/
+}
+
+/*Pull with slide group with 8 items*/
+.slide-group-8-items .slide-group-pull {
+  left: 100%; /*Changing the bracket height may require changes to this value*/
+  top: 32%; /*Changing the bracket height may require changes to this value*/
+}
+/***The following controls the pull text***/
+.slide-pull-text {
+  font-size: 1em;
+}
+
+/***The following controls the pull bracket***/
+.slide-pull-bracket {
+  position: absolute;
+}
+
+/*Bracket with slide group with 4 items*/
+.slide-group-4-items .slide-pull-text {
+  margin-left: 2.5em; /*changing the height requires changes to this values*/
+}
+.slide-group-4-items .slide-pull-bracket {
+  height: 8em;
+  left: -3em; /*changing the height requires changes to this values*/
+}
+
+/*Bracket with slide group with 6 items*/
+.slide-group-6-items .slide-pull-text {
+  margin-left: 4em; /*changing the height requires changes to this values*/
+}
+.slide-group-6-items .slide-pull-bracket {
+  height: 12.813em;
+  left: -4.8em; /*changing the height requires changes to this values*/
+}
+
+/*Bracket with slide group with 8 items*/
+.slide-group-8-items .slide-pull-text {
+  margin-left: 4.2em; /*changing the height requires changes to this values*/
+}
+.slide-group-8-items .slide-pull-bracket {
+  height: 17em;
+  left: -6.5em; /*changing the height requires changes to this values*/
+}
+

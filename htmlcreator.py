@@ -199,10 +199,10 @@ def write_new_line(line, current_indent, desired_indent):
 
 
 def pretty(file):
-    data = open(file).read()
+    data = open(file, encoding='utf-8').read()
     soup = BeautifulSoup(data, 'lxml')
     pretty = soup_prettify2(soup, desired_indent=4)
-    h = open(file, "w")
+    h = open(file, "w", encoding='utf-8')
     h.write(pretty)
     h.close()
 
@@ -217,7 +217,7 @@ def html_creator(file):
         if folder_name == False:
             return False
         
-        html = open(os.path.join(folder_name, f'{folder_name}.html'), "w")
+        html = open(os.path.join(folder_name, f'{folder_name}.html'), "w", encoding='utf-8')
         write_tags_begining(html, title)
         h2_and_h3 = []
         for j in soup.find_all(['h2', 'h3']):
